@@ -1,0 +1,6 @@
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { validSession } from "@/lib/session";
+import { supabaseAdmin } from "@/lib/supabase";
+export const runtime = "nodejs";
+export async function POST(request:Request){const store=await cookies();if(!validSession(store.get("gsss_admin")?.value))return NextResponse.json({error:"अनधिकृत अनुरोध"},{status:401});const db=supabaseAdmin();if(!db)return NextResponse.json({error:"Supabase अभी कॉन्फ़िगर नहीं है।"},{status:503});const form=await request.formData();const upload=form.get("file");if(!(upload instanceof File))return NextResponse.json({error:"कृपया फ़ाइल चुनें।"},{status:400});if(upload.size>8*1024*1024)return NextResponse.json({error:"फ़ाइल 8 MB से कम रखें।"},{status:400});const safe=upload.name.replace(/[^a-zA-Z0-9._-]/g,"-");const fileName=`${Date.now()}-${safe}`;const {error}=await db.storage.from("school-media").upload(fileName,Buffer.from(await upload.arrayBuffer()),{contentType:upload.type,upsert:false});if(error)return NextResponse.json({error:error.message},{status:400});const {data}=db.storage.from("school-media").getPublicUrl(fileName);return NextResponse.json({url:data.publicUrl,name:upload.name})}

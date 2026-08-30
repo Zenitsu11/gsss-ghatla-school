@@ -1,0 +1,3 @@
+import { NextResponse } from "next/server";
+import { createSession } from "@/lib/session";
+export async function POST(request: Request) { const { email, password } = await request.json(); const validEmail = process.env.ADMIN_EMAIL || "admin@gsssghatla.edu.in"; const validPassword = process.env.ADMIN_PASSWORD || "Ghatla@2026"; if (email !== validEmail || password !== validPassword) return NextResponse.json({ error: "Incorrect email or password." }, { status: 401 }); const response = NextResponse.json({ ok: true }); response.cookies.set("gsss_admin", createSession(email), { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 60 * 60 * 8, path: "/" }); return response; }
