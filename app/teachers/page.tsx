@@ -48,7 +48,7 @@ export default async function Teachers() {
             {x.photo_url ? <img src={x.photo_url} alt={x.full_name} style={{ width: "100%", height: 180, objectFit: "cover", marginBottom: 15 }} /> : <div style={{ height: 180, background: "#e9f0f5", display: "grid", placeItems: "center", fontSize: 40, color: "#063e76", marginBottom: 15 }}>शि</div>}
             <h3>{x.full_name}</h3>
             <p><b>{x.designation}</b>{x.subject ? ` · ${x.subject}` : ""}</p>
-            {x.joining_date && <p>सेवा आरंभ: {x.joining_date}</p>}
+            {x.joining_date && <p>इस शाला में सेवा प्रारंभ: {x.joining_date}</p>}
             {x.qualification && <p>{x.qualification}</p>}
           </article>)}
         </div>
