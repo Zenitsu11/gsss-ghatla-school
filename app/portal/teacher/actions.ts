@@ -7,8 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase";
 type ActionState = { ok: boolean; message: string };
 
 async function getTeacher() {
-  const cookieValue = (await cookies()).get("gsss_portal")?.value;
-  const session = readPortalSession(cookieValue);
+  const session = readPortalSession((await cookies()).get("gsss_portal")?.value);
   if (!session) return { error: "Unauthorized" as const };
   if (session.role !== "teacher") return { error: "Teacher access required" as const };
 
@@ -21,18 +20,14 @@ async function getTeacher() {
     .eq("id", session.id)
     .maybeSingle();
 
-  if (profileErrorMessage(error) || !profile || profile.role !== "teacher") {
+  if (error || !profile || profile.role !== "teacher") {
     return { error: "Teacher access required" as const };
   }
 
   return { db, profile };
 }
 
-function profileErrorMessage(error: { message?: string } | null) {
-  return Boolean(error?.message);
-}
-
-export async function markAttendance(formData: FormData): Promise<ActionState> {
+export async function markAttendance(_prevState: ActionState, formData: FormData): Promise<ActionState> {
   const teacher = await getTeacher();
   if ("error" in teacher) return { ok: false, message: teacher.error };
 
@@ -60,7 +55,7 @@ export async function markAttendance(formData: FormData): Promise<ActionState> {
   return { ok: true, message: "उपस्थिति सुरक्षित हो गई।" };
 }
 
-export async function addHomework(formData: FormData): Promise<ActionState> {
+export async function addHomework(_prevState: ActionState, formData: FormData): Promise<ActionState> {
   const teacher = await getTeacher();
   if ("error" in teacher) return { ok: false, message: teacher.error };
 
