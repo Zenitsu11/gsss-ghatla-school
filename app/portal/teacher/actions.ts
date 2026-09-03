@@ -1,95 +1,89 @@
 "use server";
 
-import { headers } from "next/headers";
+import { cookies } from "next/headers";
 import { readPortalSession } from "@/lib/portal-session";
 import { supabaseAdmin } from "@/lib/supabase";
 
-type AttendanceInput = {
-  studentId: string;
-  attendanceDate: string;
-  status: string;
-  note: string;
-};
-
-type HomeworkInput = {
-  title: string;
-  description: string;
-  subject: string;
-  className: string;
-  dueDate: string;
-};
-
-function getPortalCookie(cookieHeader: string | null) {
-  if (!cookieHeader) return undefined;
-  const match = cookieHeader.match(/(?:^|;\s*)gsss_portal=([^;]*)/);
-  return match ? decodeURIComponent(match[1]) : undefined;
-}
+type ActionState = { ok: boolean; message: string };
 
 async function getTeacher() {
-  // Read the raw request Cookie header in the server action. This is more reliable
-  // for client-invoked Server Actions than depending on the dynamic cookie store.
-  const cookieHeader = (await headers()).get("cookie");
-  const session = readPortalSession(getPortalCookie(cookieHeader));
+  const cookieValue = (await cookies()).get("gsss_portal")?.value;
+  const session = readPortalSession(cookieValue);
   if (!session) return { error: "Unauthorized" as const };
   if (session.role !== "teacher") return { error: "Teacher access required" as const };
 
   const db = supabaseAdmin();
   if (!db) return { error: "Supabase not configured" as const };
 
-  const { data: profile, error: profileError } = await db
+  const { data: profile, error } = await db
     .from("school_users")
     .select("id,role,email")
     .eq("id", session.id)
     .maybeSingle();
 
-  if (profileError || !profile || profile.role !== "teacher") {
+  if (profileErrorMessage(error) || !profile || profile.role !== "teacher") {
     return { error: "Teacher access required" as const };
   }
 
   return { db, profile };
 }
 
-export async function markAttendance(input: AttendanceInput) {
-  const teacher = await getTeacher();
-  if ("error" in teacher) return { ok: false, error: teacher.error };
+function profileErrorMessage(error: { message?: string } | null) {
+  return Boolean(error?.message);
+}
 
-  if (!input.studentId || !input.attendanceDate || !input.status) {
-    return { ok: false, error: "Student, date and status are required" };
+export async function markAttendance(formData: FormData): Promise<ActionState> {
+  const teacher = await getTeacher();
+  if ("error" in teacher) return { ok: false, message: teacher.error };
+
+  const studentId = String(formData.get("studentId") || "");
+  const attendanceDate = String(formData.get("attendanceDate") || "");
+  const status = String(formData.get("status") || "");
+  const note = String(formData.get("note") || "");
+
+  if (!studentId || !attendanceDate || !status) {
+    return { ok: false, message: "Student, date and status are required" };
   }
 
   const { error } = await teacher.db.from("attendance").upsert(
     {
-      student_id: input.studentId,
-      attendance_date: input.attendanceDate,
-      status: input.status,
+      student_id: studentId,
+      attendance_date: attendanceDate,
+      status,
       marked_by: teacher.profile.id,
-      note: input.note || null,
+      note: note || null,
     },
     { onConflict: "student_id,attendance_date" },
   );
 
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  if (error) return { ok: false, message: error.message };
+  return { ok: true, message: "उपस्थिति सुरक्षित हो गई।" };
 }
 
-export async function addHomework(input: HomeworkInput) {
+export async function addHomework(formData: FormData): Promise<ActionState> {
   const teacher = await getTeacher();
-  if ("error" in teacher) return { ok: false, error: teacher.error };
+  if ("error" in teacher) return { ok: false, message: teacher.error };
 
-  if (!input.title || !input.description || !input.subject || !input.className) {
-    return { ok: false, error: "Title, description, subject and class are required" };
+  const title = String(formData.get("title") || "");
+  const description = String(formData.get("description") || "");
+  const subject = String(formData.get("subject") || "");
+  const className = String(formData.get("className") || "");
+  const dueDate = String(formData.get("dueDate") || "");
+
+  if (!title || !description || !subject || !className) {
+    return { ok: false, message: "Title, description, subject and class are required" };
   }
 
   const { error } = await teacher.db.from("homework").insert({
-    title: input.title,
-    description: input.description,
-    subject: input.subject,
-    class_name: input.className,
-    due_date: input.dueDate || null,
+    title,
+    description,
+    subject,
+    class_name: className,
+    due_date: dueDate || null,
     teacher_id: teacher.profile.id,
     attachment_url: null,
   });
 
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  if (error) return { ok: false, message: error.message };
+  return { ok: true, message: "गृहकार्य प्रकाशित हो गया।" };
 }
