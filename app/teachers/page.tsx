@@ -9,6 +9,8 @@ type Staff = {
   designation: string;
   subject: string | null;
   joining_date: string;
+  qualification?: string | null;
+  photo_url?: string | null;
 };
 
 // Safe public fields from the school's Shala Darpan staff export.
@@ -41,7 +43,7 @@ export default async function Teachers() {
     ? await db.from("staff_posts").select("full_name,designation,subject,qualification,photo_url,display_order").eq("active", true).order("display_order")
     : { data: [] };
 
-  const dbStaff = (data || []).map((x) => ({
+  const dbStaff: Staff[] = (data || []).map((x) => ({
     full_name: x.full_name,
     employee_id: "",
     designation: x.designation,
@@ -66,7 +68,7 @@ export default async function Teachers() {
             <h3>{x.full_name}</h3>
             <p><b>{x.designation}</b>{x.subject ? ` · ${x.subject}` : ""}</p>
             {x.joining_date && <p>सेवा आरंभ: {x.joining_date}</p>}
-            {"qualification" in x && x.qualification && <p>{x.qualification}</p>}
+            {x.qualification && <p>{x.qualification}</p>}
           </article>)}
         </div>
       </section>
