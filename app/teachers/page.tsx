@@ -15,16 +15,25 @@ export default async function Teachers() {
     ? await db.from("staff_posts").select("full_name,designation,subject,qualification,photo_url,display_order").eq("active", true).order("display_order")
     : { data: [] };
 
-  const dbStaff: Staff[] = (data || []).map((x) => ({
-    full_name: x.full_name,
-    employee_id: "",
-    designation: x.designation,
-    subject: x.subject,
-    joining_date: "",
-    qualification: x.qualification,
-    photo_url: x.photo_url,
-  }));
-  const staff: Staff[] = dbStaff.length ? dbStaff : shalaDarpanStaff;
+  // Shala Darpan remains the baseline directory. Admin-entered records can
+  // override a matching name/photo/qualification without hiding the rest.
+  const overrides = new Map(
+    (data || []).map((x) => [x.full_name.trim().toLowerCase(), x]),
+  );
+  const staff: Staff[] = shalaDarpanStaff.map((x) => {
+    const override = overrides.get(x.full_name.trim().toLowerCase());
+    return override
+      ? { ...x, designation: override.designation, subject: override.subject, qualification: override.qualification, photo_url: override.photo_url }
+      : x;
+  });
+
+  // Keep admin-only staff entries that are not present in the current export.
+  for (const x of data || []) {
+    const key = x.full_name.trim().toLowerCase();
+    if (!shalaDarpanStaff.some((s) => s.full_name.trim().toLowerCase() === key)) {
+      staff.push({ full_name: x.full_name, employee_id: "", designation: x.designation, subject: x.subject, joining_date: "", qualification: x.qualification, photo_url: x.photo_url });
+    }
+  }
 
   return (
     <main className="gov-site">
