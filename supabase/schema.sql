@@ -72,10 +72,28 @@ create table if not exists public.staff_posts (
   created_at timestamptz not null default now()
 );
 
+-- Private student master data. Only operational fields are retained from Shala Darpan exports.
+-- Sensitive fields such as Aadhaar, parent mobile, address, DOB, income and category are intentionally excluded.
+create table if not exists public.students (
+  id uuid primary key default gen_random_uuid(),
+  sr_no text not null unique,
+  full_name text not null,
+  class_name text not null,
+  section text,
+  roll_number text,
+  admission_date date,
+  active boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists students_class_idx on public.students(class_name, section, roll_number);
+
 alter table public.school_users enable row level security;
 alter table public.homework enable row level security;
 alter table public.attendance enable row level security;
 alter table public.gallery_items enable row level security;
 alter table public.staff_posts enable row level security;
+alter table public.students enable row level security;
 
 -- Browser access is intentionally disabled. Server routes use the service-role key.
