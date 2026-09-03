@@ -20,12 +20,13 @@ export async function POST(request:Request){
   const db=supabaseAdmin();
   if(!db)return NextResponse.json({error:"Supabase not configured"},{status:500});
 
-  // Authorize from the current database role, not only the role cached in the cookie.
-  const {data:profile,error:profileError}=await db.from("school_users").select("role").eq("id",s.id).maybeSingle();
+  // Resolve the teacher from the current database profile using the login email.
+  // This also recovers cleanly if a browser still has a session containing an old user id.
+  const {data:profile,error:profileError}=await db.from("school_users").select("id,role,email").eq("email",s.email.toLowerCase()).maybeSingle();
   if(profileError||!profile||profile.role!=="teacher")return NextResponse.json({error:"Teacher access required"},{status:403});
 
   const body=await request.json();
-  const {error}=await db.from("homework").insert({title:body.title,description:body.description,subject:body.subject,class_name:body.className,due_date:body.dueDate||null,teacher_id:s.id,attachment_url:body.attachmentUrl||null});
+  const {error}=await db.from("homework").insert({title:body.title,description:body.description,subject:body.subject,class_name:body.className,due_date:body.dueDate||null,teacher_id:profile.id,attachment_url:body.attachmentUrl||null});
   if(error)return NextResponse.json({error:error.message},{status:400});
   return NextResponse.json({ok:true});
 }
