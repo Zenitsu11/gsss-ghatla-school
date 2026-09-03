@@ -20,13 +20,14 @@ export async function POST(request:Request){
   const db=supabaseAdmin();
   if(!db)return NextResponse.json({error:"Supabase not configured"},{status:500});
 
-  // Authorize from the current database role, not only the role cached in the cookie.
-  const {data:profile,error:profileError}=await db.from("school_users").select("role").eq("id",s.id).maybeSingle();
+  // Resolve the teacher from the current database profile using the login email.
+  // This also recovers cleanly if a browser still has a session containing an old user id.
+  const {data:profile,error:profileError}=await db.from("school_users").select("id,role,email").eq("email",s.email.toLowerCase()).maybeSingle();
   if(profileError||!profile||profile.role!=="teacher")return NextResponse.json({error:"Teacher access required"},{status:403});
 
   const body=await request.json();
   if(!body.studentId||!body.attendanceDate||!body.status)return NextResponse.json({error:"Student, date and status are required"},{status:400});
-  const {error}=await db.from("attendance").upsert({student_id:body.studentId,attendance_date:body.attendanceDate,status:body.status,marked_by:s.id,note:body.note||null},{onConflict:"student_id,attendance_date"});
+  const {error}=await db.from("attendance").upsert({student_id:body.studentId,attendance_date:body.attendanceDate,status:body.status,marked_by:profile.id,note:body.note||null},{onConflict:"student_id,attendance_date"});
   if(error)return NextResponse.json({error:error.message},{status:400});
   return NextResponse.json({ok:true});
 }
