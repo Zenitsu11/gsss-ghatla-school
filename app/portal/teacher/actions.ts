@@ -5,14 +5,17 @@ import { readPortalSession } from "@/lib/portal-session";
 import { supabaseAdmin } from "@/lib/supabase";
 
 type ActionState = { ok: boolean; message: string };
+type TeacherAuth =
+  | { error: string }
+  | { db: NonNullable<ReturnType<typeof supabaseAdmin>>; profile: { id: string; role: "teacher"; email: string | null } };
 
-async function getTeacher() {
+async function getTeacher(): Promise<TeacherAuth> {
   const session = readPortalSession((await cookies()).get("gsss_portal")?.value);
-  if (!session) return { error: "Unauthorized" as const };
-  if (session.role !== "teacher") return { error: "Teacher access required" as const };
+  if (!session) return { error: "Unauthorized" };
+  if (session.role !== "teacher") return { error: "Teacher access required" };
 
   const db = supabaseAdmin();
-  if (!db) return { error: "Supabase not configured" as const };
+  if (!db) return { error: "Supabase not configured" };
 
   const { data: profile, error } = await db
     .from("school_users")
@@ -21,10 +24,10 @@ async function getTeacher() {
     .maybeSingle();
 
   if (error || !profile || profile.role !== "teacher") {
-    return { error: "Teacher access required" as const };
+    return { error: "Teacher access required" };
   }
 
-  return { db, profile };
+  return { db, profile: { id: profile.id, role: "teacher", email: profile.email } };
 }
 
 export async function markAttendance(_prevState: ActionState, formData: FormData): Promise<ActionState> {
