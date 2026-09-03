@@ -1,17 +1,20 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { addHomework, markAttendance } from "./actions";
 import styles from "../portal.module.css";
 
 type Student={id:string;full_name:string;class_name:string|null;roll_number:string|null};
 type Homework={id:number;title:string;description:string;subject:string;class_name:string;due_date:string|null};
+type ActionState={ok:boolean;message:string};
+const initialState:ActionState={ok:false,message:""};
 
 export default function TeacherPanel(){
   const [students,setStudents]=useState<Student[]>([]);
   const [homework,setHomework]=useState<Homework[]>([]);
-  const [msg,setMsg]=useState("");
-  const [hw,setHw]=useState({title:"",description:"",subject:"",className:"",dueDate:""});
-  const [att,setAtt]=useState({studentId:"",attendanceDate:new Date().toISOString().slice(0,10),status:"present",note:""});
+  const [attState,attAction]=useActionState(markAttendance,initialState);
+  const [hwState,hwAction]=useActionState(addHomework,initialState);
+  const [attDate,setAttDate]=useState(new Date().toISOString().slice(0,10));
+  const [hwKey,setHwKey]=useState(0);
 
   async function load(){
     const [s,h]=await Promise.all([
@@ -23,24 +26,9 @@ export default function TeacherPanel(){
   }
 
   useEffect(()=>{load()},[]);
+  useEffect(()=>{if(hwState.ok){setHwKey(k=>k+1);load()}},[hwState.ok]);
 
-  async function addHomeworkForm(e:React.FormEvent){
-    e.preventDefault();
-    setMsg("");
-    const result=await addHomework(hw);
-    setMsg(result.ok?"गृहकार्य प्रकाशित हो गया।":result.error||"त्रुटि");
-    if(result.ok){
-      setHw({title:"",description:"",subject:"",className:"",dueDate:""});
-      load();
-    }
-  }
-
-  async function mark(e:React.FormEvent){
-    e.preventDefault();
-    setMsg("");
-    const result=await markAttendance(att);
-    setMsg(result.ok?"उपस्थिति सुरक्षित हो गई।":result.error||"त्रुटि");
-  }
+  const message=attState.message||hwState.message;
 
   return <div className={styles.main}>
     <h1>शिक्षक डैशबोर्ड</h1>
@@ -50,31 +38,33 @@ export default function TeacherPanel(){
       <div className={styles.stat}><small>गृहकार्य</small><b>{homework.length}</b></div>
       <div className={styles.stat}><small>आज</small><b>{new Date().toLocaleDateString("hi-IN")}</b></div>
     </div>
-    {msg&&<div className={styles.success}>{msg}</div>}
+    {message&&<div className={message.includes("Unauthorized")||message.includes("required")?styles.error:styles.success}>{message}</div>}
+
     <section className={styles.panel}>
       <h2>दैनिक उपस्थिति</h2>
-      <form className={styles.form} onSubmit={mark}>
+      <form className={styles.form} action={attAction}>
         <div className={styles.two}>
-          <label>विद्यार्थी<select value={att.studentId} onChange={e=>setAtt({...att,studentId:e.target.value})} required><option value="">विद्यार्थी चुनें</option>{students.map(s=><option key={s.id} value={s.id}>{s.full_name} — {s.class_name||""} {s.roll_number?`(${s.roll_number})`:""}</option>)}</select></label>
-          <label>तारीख<input type="date" value={att.attendanceDate} onChange={e=>setAtt({...att,attendanceDate:e.target.value})}/></label>
+          <label>विद्यार्थी<select name="studentId" required><option value="">विद्यार्थी चुनें</option>{students.map(s=><option key={s.id} value={s.id}>{s.full_name} — {s.class_name||""} {s.roll_number?`(${s.roll_number})`:""}</option>)}</select></label>
+          <label>तारीख<input name="attendanceDate" type="date" value={attDate} onChange={e=>setAttDate(e.target.value)} required/></label>
         </div>
         <div className={styles.two}>
-          <label>स्थिति<select value={att.status} onChange={e=>setAtt({...att,status:e.target.value})}><option value="present">उपस्थित</option><option value="absent">अनुपस्थित</option><option value="late">विलंब से</option><option value="leave">अवकाश</option></select></label>
-          <label>टिप्पणी<input value={att.note} onChange={e=>setAtt({...att,note:e.target.value})}/></label>
+          <label>स्थिति<select name="status" defaultValue="present"><option value="present">उपस्थित</option><option value="absent">अनुपस्थित</option><option value="late">विलंब से</option><option value="leave">अवकाश</option></select></label>
+          <label>टिप्पणी<input name="note"/></label>
         </div>
         <button className={styles.button}>उपस्थिति सेव करें</button>
       </form>
     </section>
+
     <section className={styles.panel}>
       <h2>नया गृहकार्य</h2>
-      <form className={styles.form} onSubmit={addHomeworkForm}>
-        <label>शीर्षक<input required value={hw.title} onChange={e=>setHw({...hw,title:e.target.value})}/></label>
-        <label>विवरण<textarea required value={hw.description} onChange={e=>setHw({...hw,description:e.target.value})}/></label>
+      <form key={hwKey} className={styles.form} action={hwAction}>
+        <label>शीर्षक<input name="title" required/></label>
+        <label>विवरण<textarea name="description" required/></label>
         <div className={styles.two}>
-          <label>विषय<input required value={hw.subject} onChange={e=>setHw({...hw,subject:e.target.value})}/></label>
-          <label>कक्षा<input required value={hw.className} onChange={e=>setHw({...hw,className:e.target.value})}/></label>
+          <label>विषय<input name="subject" required/></label>
+          <label>कक्षा<input name="className" required/></label>
         </div>
-        <label>अंतिम तिथि<input type="date" value={hw.dueDate} onChange={e=>setHw({...hw,dueDate:e.target.value})}/></label>
+        <label>अंतिम तिथि<input name="dueDate" type="date"/></label>
         <button className={`${styles.button} ${styles.alt}`}>गृहकार्य प्रकाशित करें</button>
       </form>
     </section>
