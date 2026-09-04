@@ -71,7 +71,38 @@ export default function ContentEditor() {
   };
 
   return (
-    <section className="editor">
+    <section className="editor admin-editor">
+      <style jsx global>{`
+        .admin-editor { width: 100%; }
+        .admin-editor h2 { font-size: 30px; line-height: 1.2; margin-bottom: 10px; }
+        .admin-editor > p { margin-bottom: 24px; }
+        .editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+        .editor-grid label { display: grid; gap: 8px; min-width: 0; font-size: 13px; font-weight: 800; color: #24364d; }
+        .editor-grid .wide { grid-column: 1 / -1; }
+        .editor-grid textarea { width: 100%; max-width: 100%; border: 1px solid #c7cbd1; border-radius: 8px; background: #fff; color: #172b47; font: 14px/1.6 Arial, 'Noto Sans Devanagari', sans-serif; outline: none; }
+        .editor-grid textarea:focus { border-color: #063e76; box-shadow: 0 0 0 3px #063e7618; }
+        .editor-grid input[type=file] { width: 100%; min-height: 48px; padding: 10px; border: 1px dashed #9aa7b4; border-radius: 8px; background: #fff; font-size: 13px; }
+        .editor-grid small { font-size: 11px; line-height: 1.5; color: #68778a; font-weight: 500; }
+        .uploads { background: #fff; border: 1px solid #d8dde3; border-radius: 8px; padding: 14px; }
+        .uploads > div { flex-wrap: wrap; }
+        .uploads a { overflow-wrap: anywhere; color: #063e76; font-size: 13px; }
+        .uploads button { min-height: 42px; }
+        .admin-editor .save { width: 100%; min-height: 52px; margin-top: 22px; border: 0; border-radius: 8px; background: #063e76; color: #fff; padding: 14px 18px; font: 800 14px Arial, 'Noto Sans Devanagari', sans-serif; cursor: pointer; }
+        .admin-editor .save:active { transform: translateY(1px); }
+        .admin-editor .save-message { display: block; min-height: 24px; margin-top: 10px; font-size: 13px; font-weight: 700; color: #356047; }
+        @media (max-width: 720px) {
+          .admin-editor h2 { font-size: 25px; }
+          .editor-grid { grid-template-columns: 1fr; gap: 14px; }
+          .editor-grid .wide { grid-column: auto; }
+          .editor-grid label { font-size: 13px; }
+          .editor-grid textarea { font-size: 16px; min-height: 74px; }
+          .editor-grid input[type=file] { font-size: 12px; }
+          .uploads { padding: 12px; }
+          .uploads > div { align-items: stretch !important; }
+          .uploads button { width: 100%; }
+          .admin-editor .save { position: sticky; bottom: 10px; z-index: 10; box-shadow: 0 8px 24px #10294433; }
+        }
+      `}</style>
       <h2>वेबसाइट सामग्री संपादित करें</h2>
       <p>यहाँ किया गया परिवर्तन वेबसाइट के मुख्य पृष्ठ पर दिखाई देगा। सभी टेक्स्ट बॉक्स में अब आप कई पंक्तियाँ लिख सकते हैं।</p>
       <div className="editor-grid">
