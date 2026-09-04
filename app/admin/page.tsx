@@ -11,6 +11,18 @@ export default async function AdminPage() {
 
   return (
     <main className="dashboard">
+      <style>{`
+        .admin-actions { display:flex; gap:12px; flex-wrap:wrap; margin:25px 0; }
+        .admin-actions .button { border-radius:7px; min-height:46px; justify-content:center; }
+        .admin-actions .button.ghost { color:#172b47; border:1px solid #9aa7b4; }
+        @media (max-width:720px) {
+          .dash-header { gap:14px; }
+          .dash-main h1 { font-size:36px; line-height:1.1; }
+          .dash-main { padding-top:30px; padding-bottom:45px; }
+          .admin-actions { display:grid; grid-template-columns:1fr; gap:10px; margin:22px 0 30px; }
+          .admin-actions .button { width:100%; padding:14px 16px; font-size:13px; }
+        }
+      `}</style>
       <header>
         <div className="wrap dash-header">
           <div className="brand">
