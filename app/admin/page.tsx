@@ -4,4 +4,36 @@ import Link from "next/link";
 import { validSession } from "@/lib/session";
 import LogoutButton from "./logout-button";
 import ContentEditor from "./content-editor";
-export default async function AdminPage(){const store=await cookies();if(!validSession(store.get("gsss_admin")?.value))redirect("/login");return <main className="dashboard"><header><div className="wrap dash-header"><div className="brand"><span className="crest">ग</span><span>रा.उ.मा.वि. <b>घातला</b><small>विद्यालय व्यवस्थापन</small></span></div><LogoutButton/></div></header><section className="wrap dash-main"><p className="eyebrow">विद्यालय लॉगिन</p><h1>प्रशासन डैशबोर्ड</h1><p>विद्यालय की मुख्य जानकारी, सूचनाएँ, गतिविधियाँ और विद्यार्थी रिकॉर्ड यहाँ से बदलें।</p><div style={{display:"flex",gap:12,flexWrap:"wrap",margin:"25px 0"}}><Link href="/admin/portal" className="button dark">शिक्षक खाता प्रबंधन →</Link><Link href="/admin/students" className="button dark">विद्यार्थी प्रबंधन →</Link><Link href="/admin/gallery" className="button dark">फोटो गैलरी प्रबंधन →</Link><Link href="/teachers" className="button ghost">सार्वजनिक स्टाफ देखें →</Link><Link href="/gallery" className="button ghost">सार्वजनिक गैलरी देखें →</Link><Link href="/portal/login" className="button ghost">पोर्टल देखें →</Link></div><ContentEditor/></section></main>}
+
+export default async function AdminPage() {
+  const store = await cookies();
+  if (!validSession(store.get("gsss_admin")?.value)) redirect("/login");
+
+  return (
+    <main className="dashboard">
+      <header>
+        <div className="wrap dash-header">
+          <div className="brand">
+            <span className="crest">ग</span>
+            <span>रा.उ.मा.वि. <b>घातला</b><small>विद्यालय व्यवस्थापन</small></span>
+          </div>
+          <LogoutButton />
+        </div>
+      </header>
+      <section className="wrap dash-main">
+        <p className="eyebrow">विद्यालय लॉगिन</p>
+        <h1>प्रशासन डैशबोर्ड</h1>
+        <p>विद्यालय की मुख्य जानकारी, सूचनाएँ, गतिविधियाँ और विद्यार्थी रिकॉर्ड यहाँ से बदलें।</p>
+        <div className="admin-actions">
+          <Link href="/admin/portal" className="button dark">शिक्षक खाता प्रबंधन →</Link>
+          <Link href="/admin/students" className="button dark">विद्यार्थी प्रबंधन →</Link>
+          <Link href="/admin/gallery" className="button dark">फोटो गैलरी प्रबंधन →</Link>
+          <Link href="/teachers" className="button ghost">सार्वजनिक स्टाफ देखें →</Link>
+          <Link href="/gallery" className="button ghost">सार्वजनिक गैलरी देखें →</Link>
+          <Link href="/portal/login" className="button ghost">पोर्टल देखें →</Link>
+        </div>
+        <ContentEditor />
+      </section>
+    </main>
+  );
+}
